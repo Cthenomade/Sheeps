@@ -1,1 +1,360 @@
+#include <stdio.h>
+#include <windows.h>
 
+#define INF 65535		//定义无穷大
+#define MaxVerNum 100		//定义最大顶点个数
+typedef char elementType;		//定义图中顶点的数据类型
+typedef	int cellType;		//定义邻接矩阵中元素的数据类型
+typedef struct GraphAdjMatrix {
+	elementType Data[MaxVerNum + 1];
+	cellType AdjMatrix[MaxVerNum + 1][MaxVerNum + 1];
+	int VerNum;
+	int ArcNum;
+}Graph;
+
+struct path {
+	cellType dist;		//该路径的总长度
+	int num;		//路径上顶点个数
+	int path[MaxVerNum];		//该路径各顶点
+}choicePath[MaxVerNum],finalPath[MaxVerNum];
+
+struct cannot {
+	int ver[MaxVerNum];		
+}unableVer[MaxVerNum];		//用于存储不能用的点和边
+
+
+//图的创建
+void getGraph(Graph& G)
+{
+	int i, j;
+
+	G.VerNum = 6;
+	G.ArcNum = 9;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		for (j = 1; j <= G.VerNum; j++)
+		{
+			G.AdjMatrix[i][j] = INF;
+		}
+	}
+
+	//C为1，D为2，E为3，F为4，G为5，H为6
+	G.Data[1] = 'C';
+	G.Data[2] = 'D';
+	G.Data[3] = 'E';
+	G.Data[4] = 'F';
+	G.Data[5] = 'G';
+	G.Data[6] = 'H';
+
+	G.AdjMatrix[1][2] = 3;
+	G.AdjMatrix[1][3] = 2;
+	G.AdjMatrix[2][4] = 4;
+	G.AdjMatrix[3][2] = 1;
+	G.AdjMatrix[3][4] = 2;
+	G.AdjMatrix[3][5] = 3;
+	G.AdjMatrix[4][5] = 2;
+	G.AdjMatrix[4][6] = 1;
+	G.AdjMatrix[5][6] = 2;
+}
+
+//图的打印
+void printGraph(Graph& G)
+{
+	int i, j;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		for (j = 1; j <= G.VerNum; j++)
+		{
+			printf("%d\t", G.AdjMatrix[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+//Dijkstra算法
+void Dijkstra(Graph& G, int path[], int dist[], int vID)
+{
+	int solved[MaxVerNum];
+	int i, j, v;
+	cellType minDist;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		solved[i - 1] = 0;
+		dist[i - 1] = G.AdjMatrix[vID][i];
+		if (dist[i - 1] != INF)
+		{
+			path[i - 1] = vID;
+		}
+		else
+		{
+			path[i - 1] = -1;
+		}
+	}
+
+	solved[vID - 1] = 1;
+	dist[vID - 1] = 0;
+	path[vID - 1] = -1;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		minDist = INF;
+		for (j = 1; j <= G.VerNum; j++)
+		{
+			if (solved[j - 1] == 0 && dist[j - 1] < minDist)
+			{
+				v = j;
+				minDist = dist[j - 1];
+			}
+		}
+		if (minDist == INF)
+			return;
+		solved[v - 1] = 1;
+
+		for (j = 1; j <= G.VerNum; j++)
+		{
+			if (solved[j - 1] == 0 && (minDist + G.AdjMatrix[v][j] < dist[j - 1]))
+			{
+				dist[j - 1] = minDist + G.AdjMatrix[v][j];
+				path[j - 1] = v;
+			}
+		}
+	}
+}
+
+void printDijsktra(Graph& G, int path[],int dist[], int vID)
+{
+	int sPath[MaxVerNum];
+	int vPre;
+	int top = -1;
+	int i, j;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		printf("%c到%c", G.Data[vID], G.Data[i]);
+		if (dist[i - 1] == INF)
+		{
+			printf("no path\n");
+		}
+		else
+		{
+			printf("最短距离为: %d\n", dist[i - 1]);
+			printf("路径为: ");
+		}
+		top++;
+		sPath[top] = i;
+		vPre = path[i - 1];
+		while (vPre != -1)
+		{
+			top++;
+			sPath[top] = vPre;
+			vPre = path[vPre - 1];
+		}
+		if (dist[i - 1] != INF)
+		{
+			for (j = top; j >= 0; j--)
+			{
+				printf("%c ", G.Data[sPath[j]]);
+			}
+			top = -1;
+			printf("\n");
+		}
+	}
+}
+
+void getPath(Graph &G, int v, int p, int path[],int dist[],int &num)
+{
+	int sPath[MaxVerNum];
+	int vPre;
+	int top = -1;
+	int i;
+
+	num = 0;		//初始化路径中点的个数
+
+	top++;
+	sPath[top] = p;
+	vPre = path[p - 1];
+	while (vPre != -1)
+	{
+		top++;
+		sPath[top] = vPre;
+		vPre = path[vPre - 1];
+	}
+	
+	if (dist[p - 1] != INF)
+	{
+		for (i = top; i >= 0; i--)
+		{
+			num++;
+			path[num] = sPath[i];
+		}
+	}
+}
+
+//打印路径
+void printPath(Graph G,int path[],int num)
+{
+	int i;
+
+	for (i = 1; i <= num; i++)
+	{
+		printf("%c ", G.Data[path[i]]);
+	}
+	printf("\n");
+}
+
+//比较两个数组(从1开始)是否相等
+int equal(int p[], int q[],int num1,int num2)
+{
+	int i;
+
+	if (num1 != num2)
+		return 0;
+
+	for (i = 1; i <= num1; i++)
+	{
+		if (p[i] != q[i])
+			return 0;
+	}
+
+	return 1;
+}
+
+
+void Yen(Graph& G, int v, int p, int k)
+{
+	int preDist;			//存储偏移路径前的点的长度
+	int path[MaxVerNum];		//存储偏移路径前的点
+	int dist[MaxVerNum];		//用于Dijsktra算法
+	int temp[MaxVerNum];		//用于拼接前后路径
+	int kk = 0;		//用于计数（目前最短路径的条数）
+	int i,j,m;
+	int n = 0;			//用于记录候选路径中路径的条数
+	int cho;			//用于选择候选路径中最短的一条
+	int min;
+	int iFlag = 0;		//用于判断是否有重复路径
+	Graph g;
+
+	for (i = 1; i <= G.VerNum; i++)
+	{
+		for (j = 1; j <= G.VerNum; j++)
+		{
+			unableVer[i].ver[j] = 0;
+		}
+	}
+	Dijkstra(G, finalPath[0].path, dist, v);
+	finalPath[0].dist = dist[p - 1];		//存储第一条最短路径信息
+	printf("第1条最短路径为: \n");
+	getPath(G, v, p, finalPath[0].path, dist,finalPath[0].num);
+	printPath(G, finalPath[0].path, finalPath[0].num);
+	printf("长度为: %d\n",finalPath[0].dist );
+
+	kk++;
+
+	while (kk < k)
+	{
+		iFlag = 0;
+		for (i = 1; i < finalPath[kk - 1].num; i++)
+		{
+			preDist = 0;
+			g = G;
+			for (j = 1; j < i; j++)
+			{
+				preDist += G.AdjMatrix[finalPath[kk - 1].path[j]][finalPath[kk - 1].path[j + 1]];
+				path[j] = finalPath[kk - 1].path[j];			//存储偏移路径前的顶点
+			}
+						
+			unableVer[finalPath[kk - 1].path[i]].ver[finalPath[kk - 1].path[i + 1]] = 1;
+			
+			for (j = 1; j <= G.VerNum; j++)			{
+				if (unableVer[finalPath[kk - 1].path[i]].ver[j] == 1)
+				{
+					g.AdjMatrix[finalPath[kk - 1].path[i]][j] = INF;
+				}
+			}
+
+			Dijkstra(g, choicePath[n].path, dist, finalPath[kk - 1].path[i]);			//偏移点的Dijkstra算法
+			choicePath[n].dist = dist[p - 1] + preDist;		//该路径长度要加上偏移点前的路径长度
+			getPath(g, finalPath[kk - 1].path[i], p, choicePath[n].path, dist, choicePath[n].num);		//得到偏移点到目的点路径
+			
+			for (j = 1; j <= choicePath[n].num; j++)
+			{
+				temp[j] = choicePath[n].path[j];		//后半段路径存入临时数组
+			}
+			
+			choicePath[n].num += (i - 1);		//该路径上顶点个数要加上偏移点前的顶点个数
+			for (j = 1; j < i; j++)
+			{
+				choicePath[n].path[j] = path[j];
+			}
+			for (; j <= choicePath[n].num; j++)
+			{
+				choicePath[n].path[j] = temp[j - i + 1];
+			}
+
+			n++;
+		}		//所有候选路径存储完毕
+
+//		展示候选路径
+// 		if(kk == 4)
+//		 for (i = 0; i < n; i++)
+//		 {
+//			printPath(G, choicePath[i].path, choicePath[i].num);
+//			printf("长度为: %d\n", choicePath[i].dist);
+//		 }
+
+		while (iFlag == 0)
+		{
+			cho = 0;
+
+			//从候选路径中选择路径长度最短的一条
+			for (i = 0; i < n; i++)
+			{
+				if (choicePath[i].dist <= choicePath[cho].dist)		//加上等号,删去了语句(k == 4)
+				{
+					cho = i;
+				}
+			}
+
+			for (i = 0; i < kk; i++)		//防止重复路径
+			{
+				if (equal(finalPath[i].path, choicePath[cho].path,finalPath[i].num,choicePath[cho].num))
+				{
+					choicePath[cho].dist = INF;
+					break;
+				}
+			}
+
+			if (i == kk)
+				iFlag = 1;
+		}
+
+		//将所选路径加入到最终路径中
+		finalPath[kk].num = choicePath[cho].num;
+		finalPath[kk].dist = choicePath[cho].dist;
+		
+		for (i = 1; i <= choicePath[cho].num; i++)
+		{
+			finalPath[kk].path[i] = choicePath[cho].path[i];
+		}
+		kk++;		//所得最短路径条数增加
+
+		//将所选路径从候选路径中删除
+		choicePath[cho].dist = INF;
+
+		//打印第kk条最短路径
+		if(finalPath[kk - 1].dist < INF)
+		{
+			printf("第%d条最短路径为: \n", kk);
+			printPath(G, finalPath[kk - 1].path, finalPath[kk - 1].num);
+			printf("长度为: %d\n", finalPath[kk - 1].dist);
+		}
+		else
+		{
+			printf("没有更多路径!\n");
+			return;
+		}
+	}
+}
